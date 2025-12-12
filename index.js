@@ -18,18 +18,31 @@ app.get('/', (req, res) => {
 });
 
 // Routes
-app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/employees', require('./routes/employeeRoutes'));
-app.use('/api/payroll', require('./routes/payrollRoutes'));
-app.use('/api/wallet', require('./routes/walletRoutes'));
-app.use('/api/subscription', require('./routes/subscriptionRoutes'));
-app.use('/api/dashboard', require('./routes/dashboardRoutes'));
-app.use('/api/organization', require('./routes/organizationRoutes'));
-app.use('/api/pension', require('./routes/pensionRoutes'));
-app.use('/api/recruitment', require('./routes/recruitmentRoutes'));
-app.use('/api/hr', require('./routes/hrRoutes'));
-app.use('/api/upload', require('./routes/uploadRoutes'));
-app.use('/api/attendance', require('./routes/attendanceRoutes'));
+const authRoutes = require('./routes/authRoutes');
+const employeeRoutes = require('./routes/employeeRoutes');
+const payrollRoutes = require('./routes/payrollRoutes');
+const walletRoutes = require('./routes/walletRoutes');
+const subscriptionRoutes = require('./routes/subscriptionRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
+const organizationRoutes = require('./routes/organizationRoutes');
+const pensionRoutes = require('./routes/pensionRoutes');
+const recruitmentRoutes = require('./routes/recruitmentRoutes');
+const hrRoutes = require('./routes/hrRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
+const attendanceRoutes = require('./routes/attendanceRoutes');
+
+app.use('/api/auth', authRoutes);
+app.use('/api/employees', employeeRoutes);
+app.use('/api/payroll', payrollRoutes);
+app.use('/api/wallet', walletRoutes);
+app.use('/api/subscription', subscriptionRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/organization', organizationRoutes);
+app.use('/api/pension', pensionRoutes);
+app.use('/api/recruitment', recruitmentRoutes);
+app.use('/api/hr', hrRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/attendance', attendanceRoutes);
 
 const PORT = process.env.PORT || 5000;
 
