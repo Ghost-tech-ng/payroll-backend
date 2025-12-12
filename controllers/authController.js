@@ -36,6 +36,14 @@ const seedSuperAdminAndPlans = async () => {
                 organization: null // Super Admin doesn't belong to a client org
             });
             console.log('Super Admin seeded');
+        } else {
+            // Force reset password to ensure it matches 'password123'
+            // This fixes issues if the account was created previously with a different password
+            adminExists.password = 'password123';
+            // Ensure role is Super Admin
+            adminExists.role = 'Super Admin';
+            await adminExists.save();
+            console.log('Super Admin password/role updated');
         }
 
     } catch (error) {
