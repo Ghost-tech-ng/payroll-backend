@@ -24,7 +24,6 @@ const organizationSchema = mongoose.Schema({
     },
     subscriptionPlan: {
         type: String,
-        enum: ['basic', 'premium', 'enterprise', 'none'],
         default: 'none',
     },
     subscriptionExpiresAt: {

@@ -2,6 +2,49 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const Organization = require('../models/Organization');
+const Plan = require('../models/Plan');
+
+// SEED SUPER ADMIN & PLANS
+const seedSuperAdminAndPlans = async () => {
+    try {
+        // 1. Seed Plans
+        const plans = [
+            { name: 'Basic', price: 5000, maxEmployees: 10, features: ['Up to 10 employees', 'Basic Payroll'], color: 'bg-gray-500' },
+            { name: 'Premium', price: 15000, maxEmployees: 50, features: ['Up to 50 employees', 'Advanced Payroll', 'HR Management'], popular: true, color: 'bg-green-500' },
+            { name: 'Enterprise', price: 50000, maxEmployees: 200, features: ['Up to 200 employees', 'Full Suite', 'Dedicated Support'], color: 'bg-purple-500' }
+        ];
+
+        for (const p of plans) {
+            const exists = await Plan.findOne({ name: p.name });
+            if (!exists) {
+                await Plan.create(p);
+                console.log(`Plan ${p.name} seeded`);
+            }
+        }
+
+        // 2. Seed Super Admin
+        const superAdminEmail = 'superadmin@mipaymaster.com';
+        const adminExists = await User.findOne({ email: superAdminEmail });
+
+        if (!adminExists) {
+            const user = await User.create({
+                email: superAdminEmail,
+                password: 'password123', // Will be hashed by pre-save hook
+                firstName: 'Super',
+                lastName: 'Admin',
+                role: 'Super Admin',
+                organization: null // Super Admin doesn't belong to a client org
+            });
+            console.log('Super Admin seeded');
+        }
+
+    } catch (error) {
+        console.error('Seeding error:', error);
+    }
+};
+
+// Run seeding
+seedSuperAdminAndPlans();
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {

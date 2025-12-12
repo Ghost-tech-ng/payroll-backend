@@ -1,6 +1,7 @@
 const Activity = require('../models/Activity');
 const ROM = require('../models/ROM');
 const Employee = require('../models/Employee');
+const Organization = require('../models/Organization');
 
 // @desc    Get all employees for an organization
 // @route   GET /api/employees
@@ -85,6 +86,39 @@ const createEmployee = async (req, res) => {
     } = req.body;
 
     try {
+        // --- SUBSCRIPTION CHECK ---
+        const organization = await Organization.findById(req.user.organization);
+
+        // 1. Check if subscription is active
+        if (!organization || organization.subscriptionStatus !== 'active') {
+            // Allow 'trial' status? Let's say yes for now, or strict "active"
+            if (organization.subscriptionStatus !== 'trial') {
+                return res.status(403).json({ message: 'No active subscription. Please upgrade to add employees.' });
+            }
+        }
+
+        // 2. Check dynamic plan limits
+        const Plan = require('../models/Plan');
+        let limit = 10; // Default fallback (e.g. Trial or Basic hardcoded fallback)
+
+        // If they have a plan name
+        if (organization.subscriptionPlan && organization.subscriptionPlan !== 'none') {
+            const plan = await Plan.findOne({ name: organization.subscriptionPlan });
+            if (plan) {
+                limit = plan.maxEmployees;
+            }
+        }
+
+        // Count current employees
+        const currentCount = await Employee.countDocuments({ organization: req.user.organization });
+
+        if (currentCount >= limit) {
+            return res.status(403).json({
+                message: `Plan limit reached (${limit} employees). Should you need more space, please contact the Super Admin or upgrade your plan.`
+            });
+        }
+        // ---------------------------
+
         const employee = new Employee({
             organization: req.user.organization,
             firstName,
