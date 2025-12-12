@@ -110,8 +110,81 @@ const getSubscription = async (req, res) => {
     }
 };
 
+// @desc    Pay for subscription using wallet balance
+// @route   POST /api/subscription/pay-with-wallet
+// @access  Private
+const payWithWallet = async (req, res) => {
+    const { plan } = req.body;
+
+    try {
+        // Fetch plan from database
+        const selectedPlan = await Plan.findOne({ name: plan });
+
+        if (!selectedPlan) {
+            return res.status(400).json({ message: 'Invalid plan selected' });
+        }
+
+        // Get user's wallet
+        const Wallet = require('../models/Wallet');
+        let wallet = await Wallet.findOne({ organization: req.user.organization });
+
+        if (!wallet) {
+            return res.status(400).json({ 
+                message: 'Wallet not found. Please fund your wallet first.',
+                insufficientBalance: true 
+            });
+        }
+
+        // Check if wallet has sufficient balance
+        if (wallet.balance < selectedPlan.price) {
+            return res.status(400).json({ 
+                message: `Insufficient wallet balance. Required: ₦${selectedPlan.price.toLocaleString()}, Available: ₦${wallet.balance.toLocaleString()}`,
+                insufficientBalance: true,
+                required: selectedPlan.price,
+                available: wallet.balance
+            });
+        }
+
+        // Deduct amount from wallet
+        wallet.balance -= selectedPlan.price;
+        
+        // Add transaction record
+        wallet.transactions.push({
+            type: 'debit',
+            amount: selectedPlan.price,
+            description: `Subscription payment for ${selectedPlan.name} plan`,
+            reference: `SUB-${Date.now()}`,
+            status: 'success',
+        });
+
+        await wallet.save();
+
+        // Update organization subscription
+        const organization = await Organization.findById(req.user.organization);
+        organization.subscriptionStatus = 'active';
+        organization.subscriptionPlan = selectedPlan.name;
+        organization.subscriptionExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+
+        await organization.save();
+
+        res.json({
+            success: true,
+            message: 'Subscription activated successfully using wallet balance',
+            organization,
+            wallet: {
+                balance: wallet.balance,
+                amountDeducted: selectedPlan.price
+            }
+        });
+    } catch (error) {
+        console.error('Wallet payment error:', error);
+        res.status(500).json({ message: 'Failed to process wallet payment' });
+    }
+};
+
 module.exports = {
     initializeSubscription,
     verifySubscription,
     getSubscription,
+    payWithWallet,
 };
