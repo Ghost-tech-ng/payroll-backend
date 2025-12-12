@@ -1,5 +1,6 @@
 const axios = require('axios');
 const Organization = require('../models/Organization');
+const Plan = require('../models/Plan');
 
 // @desc    Initialize subscription payment
 // @route   POST /api/subscription/initialize
@@ -7,31 +8,27 @@ const Organization = require('../models/Organization');
 const initializeSubscription = async (req, res) => {
     const { plan, email } = req.body;
 
-    // Define subscription plans
-    const plans = {
-        basic: { amount: 5000, name: 'Basic Plan' },
-        premium: { amount: 15000, name: 'Premium Plan' },
-        enterprise: { amount: 50000, name: 'Enterprise Plan' },
-    };
-
-    const selectedPlan = plans[plan];
-    if (!selectedPlan) {
-        return res.status(400).json({ message: 'Invalid plan selected' });
-    }
-
     try {
+        // Fetch plan from database
+        const selectedPlan = await Plan.findOne({ name: plan });
+
+        if (!selectedPlan) {
+            return res.status(400).json({ message: 'Invalid plan selected' });
+        }
+
         // Initialize Paystack transaction
         const response = await axios.post(
             'https://api.paystack.co/transaction/initialize',
             {
                 email,
-                amount: selectedPlan.amount * 100, // Convert to kobo
+                amount: selectedPlan.price * 100, // Convert to kobo
                 callback_url: `${process.env.FRONTEND_URL}/subscription/verify`,
                 metadata: {
                     organization_id: req.user.organization.toString(),
                     user_id: req.user._id.toString(),
-                    plan,
+                    plan: selectedPlan.name,
                     plan_name: selectedPlan.name,
+                    plan_id: selectedPlan._id.toString(),
                 },
             },
             {

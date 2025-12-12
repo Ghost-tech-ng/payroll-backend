@@ -145,6 +145,34 @@ const createPlan = async (req, res) => {
     }
 };
 
+// @desc    Update a plan
+// @route   PUT /api/super-admin/plans/:id
+// @access  Private/SuperAdmin
+const updatePlan = async (req, res) => {
+    try {
+        const { name, price, maxEmployees, features, description, popular, color } = req.body;
+        const plan = await Plan.findById(req.params.id);
+
+        if (!plan) {
+            return res.status(404).json({ message: 'Plan not found' });
+        }
+
+        // Update fields
+        plan.name = name || plan.name;
+        plan.price = price !== undefined ? price : plan.price;
+        plan.maxEmployees = maxEmployees || plan.maxEmployees;
+        plan.features = features || plan.features;
+        plan.description = description !== undefined ? description : plan.description;
+        plan.popular = popular !== undefined ? popular : plan.popular;
+        plan.color = color || plan.color;
+
+        const updatedPlan = await plan.save();
+        res.json(updatedPlan);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // @desc    Delete a plan
 // @route   DELETE /api/super-admin/plans/:id
 // @access  Private/SuperAdmin
@@ -167,5 +195,6 @@ module.exports = {
     deleteUser,
     getPlans,
     createPlan,
+    updatePlan,
     deletePlan
 };
