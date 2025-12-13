@@ -5,7 +5,7 @@ const Organization = require('../models/Organization');
 // @access  Private
 const getOrganization = async (req, res) => {
     try {
-        const organization = await Organization.findById(req.user.organization);
+        const organization = await Organization.findById(req.user.organization).select('+apiKey');
         res.json(organization);
     } catch (error) {
         res.status(500).json({ message: 'Server Error' });
