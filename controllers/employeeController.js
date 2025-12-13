@@ -119,6 +119,36 @@ const createEmployee = async (req, res) => {
         }
         // ---------------------------
 
+        // ---------------------------
+
+        // 3. Storage & File Size Check for Passport Photo
+        let photoSize = 0;
+        if (photo && photo.startsWith('data:image/')) {
+            // Calculate size in bytes (approx)
+            photoSize = Math.ceil(photo.length * 0.75);
+
+            // Check max size (100KB)
+            if (photoSize > 102400) { // 100KB
+                return res.status(400).json({
+                    message: `Passport photo too large (${Math.round(photoSize / 1024)}KB). Maximum allowed is 100KB.`
+                });
+            }
+
+            // Check organization storage limit
+            const currentStorage = organization.storageUsed || 0;
+            const limit = organization.storageLimit || 1073741824; // 1GB default
+
+            if (currentStorage + photoSize > limit) {
+                return res.status(403).json({
+                    message: 'Storage limit exceeded. Cannot upload photo.'
+                });
+            }
+
+            // Update storage used
+            organization.storageUsed = currentStorage + photoSize;
+            await organization.save();
+        }
+
         const employee = new Employee({
             organization: req.user.organization,
             firstName,
@@ -184,6 +214,36 @@ const updateEmployee = async (req, res) => {
                     changes.push(`${key}: ${employee[key]} -> ${req.body[key]}`);
                 }
             }
+
+            // ---------------------------
+            // Storage & File Size Check for Passport Photo Update
+            if (req.body.photo && req.body.photo !== employee.photo && req.body.photo.startsWith('data:image/')) {
+                // Calculate size in bytes (approx)
+                const photoSize = Math.ceil(req.body.photo.length * 0.75);
+
+                // Check max size (100KB)
+                if (photoSize > 102400) { // 100KB
+                    return res.status(400).json({
+                        message: `Passport photo too large (${Math.round(photoSize / 1024)}KB). Maximum allowed is 100KB.`
+                    });
+                }
+
+                // Check organization storage limit
+                const organization = await Organization.findById(req.user.organization);
+                const currentStorage = organization.storageUsed || 0;
+                const limit = organization.storageLimit || 1073741824; // 1GB default
+
+                if (currentStorage + photoSize > limit) {
+                    return res.status(403).json({
+                        message: 'Storage limit exceeded. Cannot upload photo.'
+                    });
+                }
+
+                // Update storage used (Improvement: Subtract old if possible, but for now just add new usage)
+                organization.storageUsed = currentStorage + photoSize;
+                await organization.save();
+            }
+            // ---------------------------
 
             Object.assign(employee, req.body);
             const updatedEmployee = await employee.save();

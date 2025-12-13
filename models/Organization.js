@@ -5,6 +5,12 @@ const organizationSchema = mongoose.Schema({
         type: String,
         required: true,
     },
+    apiKey: {
+        type: String,
+        unique: true,
+        sparse: true,
+        description: "API Key for machine authentication"
+    },
     address: {
         type: String,
     },
@@ -38,6 +44,15 @@ const organizationSchema = mongoose.Schema({
     employerECS: { enabled: { type: Boolean, default: true }, value: { type: Number, default: 1 } },
     employerITF: { enabled: { type: Boolean, default: true }, value: { type: Number, default: 1 } },
     payeEnabled: { type: Boolean, default: false },
+    // Storage Tracking
+    storageUsed: {
+        type: Number,
+        default: 0, // In bytes
+    },
+    storageLimit: {
+        type: Number,
+        default: 1073741824, // 1GB in bytes (1024 * 1024 * 1024)
+    },
 }, {
     timestamps: true,
 });

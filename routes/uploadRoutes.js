@@ -2,9 +2,11 @@ const express = require('express');
 const router = express.Router();
 const Organization = require('../models/Organization');
 const { protect } = require('../middleware/authMiddleware');
+const { checkStorageLimit } = require('../middleware/storageMiddleware');
 
 // Simple base64 logo upload (no Cloudinary needed)
-router.post('/logo-base64', protect, async (req, res) => {
+// Apply storage limit check
+router.post('/logo-base64', protect, checkStorageLimit, async (req, res) => {
     try {
         console.log('=== Base64 Logo Upload Request ===');
         console.log('User:', req.user ? req.user._id : 'No user');
@@ -21,16 +23,29 @@ router.post('/logo-base64', protect, async (req, res) => {
             return res.status(400).json({ message: 'Invalid image format' });
         }
 
+        // Start 100KB Limit Check for Logo (Optional but good practice if consistent)
+        // Base64 length * 0.75 gives approx size in bytes
+        const sizeInBytes = Math.ceil(imageData.length * 0.75);
+        if (sizeInBytes > 1024 * 1024) { // Let's allow 1MB for Logo, strict 100KB is for Passport
+            return res.status(400).json({ message: 'Logo too large. Max 1MB allowed.' });
+        }
+
         console.log('Image data received, length:', imageData.length);
 
-        // Update organization logo
+        // Update organization logo and storage used
         const organization = await Organization.findById(req.user.organization);
 
         if (!organization) {
             return res.status(404).json({ message: 'Organization not found' });
         }
 
+        // Subtract old logo size if replacing (simplified: just add new for now, or track better)
+        // Ideally we should track "current storage" strictly. 
+        // For accurate tracking, we assume simple accumulation for now, or we'd need to know old file size.
+        // Let's just add to used.
         organization.logo = imageData;
+        organization.storageUsed = (organization.storageUsed || 0) + sizeInBytes;
+
         await organization.save();
 
         console.log('Logo saved successfully to organization');
@@ -49,7 +64,8 @@ try {
     const cloudinaryConfig = require('../config/cloudinary');
     parser = cloudinaryConfig.parser;
 
-    router.post('/logo', protect, parser.single('logo'), async (req, res) => {
+    // Apply storage check BEFORE multer processing if possible, or handle error after
+    router.post('/logo', protect, checkStorageLimit, parser.single('logo'), async (req, res) => {
         try {
             console.log('=== Cloudinary Logo Upload Request ===');
             console.log('File received:', req.file ? 'Yes' : 'No');
@@ -67,6 +83,12 @@ try {
             });
 
             const logoUrl = req.file.path;
+            const fileSize = req.file.size;
+
+            // Update storage used
+            await Organization.findByIdAndUpdate(req.user.organization, {
+                $inc: { storageUsed: fileSize }
+            });
 
             console.log('Logo uploaded successfully to Cloudinary:', logoUrl);
             res.json({ logoUrl });

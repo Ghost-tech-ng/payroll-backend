@@ -30,6 +30,7 @@ const recruitmentRoutes = require('./routes/recruitmentRoutes');
 const hrRoutes = require('./routes/hrRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
+const machineRoutes = require('./routes/machineRoutes');
 
 const superAdminRoutes = require('./routes/superAdminRoutes');
 const { getPlans } = require('./controllers/superAdminController');
@@ -43,12 +44,13 @@ app.use('/api/payroll', payrollRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/organization', organizationRoutes);
 app.use('/api/pension', pensionRoutes);
 app.use('/api/recruitment', recruitmentRoutes);
 app.use('/api/hr', hrRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/attendance', attendanceRoutes);
+app.use('/api/organizations', require('./routes/organizationRoutes'));
+app.use('/api/machine', machineRoutes);
 app.use('/api/super-admin', superAdminRoutes);
 
 const PORT = process.env.PORT || 5000;

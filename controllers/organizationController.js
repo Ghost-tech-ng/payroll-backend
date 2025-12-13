@@ -49,7 +49,31 @@ const updateOrganization = async (req, res) => {
     }
 };
 
+const crypto = require('crypto');
+
+// @desc    Generate new API Key for Organization
+// @route   POST /api/organizations/api-key
+// @access  Private (Admin only)
+const generateApiKey = async (req, res) => {
+    try {
+        const organization = await Organization.findById(req.user.organization);
+
+        if (organization) {
+            // Generate random 32-char hex string
+            const apiKey = crypto.randomBytes(16).toString('hex');
+            organization.apiKey = apiKey;
+            await organization.save();
+            res.json({ apiKey });
+        } else {
+            res.status(404).json({ message: 'Organization not found' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
 module.exports = {
     getOrganization,
     updateOrganization,
+    generateApiKey
 };

@@ -32,6 +32,13 @@ const payrollSchema = mongoose.Schema({
         totalAllowances: Number,
         totalDeductions: Number,
         netSalary: Number,
+        // Tax Components
+        tax: Number,
+        pension: Number,
+        nhf: Number,
+        cra: Number,
+        taxableIncome: Number,
+
         breakdown: {
             allowances: Map,
             deductions: Map,

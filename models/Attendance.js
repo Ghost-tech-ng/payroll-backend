@@ -39,6 +39,14 @@ const attendanceSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    source: {
+        type: String,
+        enum: ['Manual', 'Machine'],
+        default: 'Manual'
+    },
+    deviceId: {
+        type: String
+    },
     createdAt: {
         type: Date,
         default: Date.now

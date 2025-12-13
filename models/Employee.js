@@ -21,6 +21,10 @@ const employeeSchema = mongoose.Schema({
     phoneNumber: {
         type: String,
     },
+    biometricId: {
+        type: String,
+        description: "ID derived from attendance machine"
+    },
     role: {
         type: String,
         default: 'Employee',
