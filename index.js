@@ -49,6 +49,7 @@ app.use('/api/recruitment', recruitmentRoutes);
 app.use('/api/hr', hrRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/attendance', attendanceRoutes);
+app.use('/api/outsourcing', require('./routes/outsourcingRoutes'));
 app.use('/api/organizations', require('./routes/organizationRoutes'));
 app.use('/api/machine', machineRoutes);
 app.use('/api/super-admin', superAdminRoutes);

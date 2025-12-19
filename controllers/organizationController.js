@@ -16,6 +16,11 @@ const getOrganization = async (req, res) => {
 // @route   PUT /api/organization
 // @access  Private
 const updateOrganization = async (req, res) => {
+    console.log('=== Update Organization Request ===');
+    console.log('User ID:', req.user._id);
+    console.log('Organization ID from User:', req.user.organization);
+    console.log('Request Body:', req.body);
+
     try {
         const organization = await Organization.findById(req.user.organization);
 
@@ -38,14 +43,18 @@ const updateOrganization = async (req, res) => {
             if (req.body.employerECS) organization.employerECS = req.body.employerECS;
             if (req.body.employerITF) organization.employerITF = req.body.employerITF;
             if (req.body.payeEnabled !== undefined) organization.payeEnabled = req.body.payeEnabled;
+            // Update storage tracking if needed (usually handled by system, not user update)
 
             const updatedOrganization = await organization.save();
+            console.log('Organization updated successfully:', updatedOrganization.name);
             res.json(updatedOrganization);
         } else {
+            console.warn('Organization not found for ID:', req.user.organization);
             res.status(404).json({ message: 'Organization not found' });
         }
     } catch (error) {
-        res.status(500).json({ message: 'Server Error' });
+        console.error('Error updating organization:', error);
+        res.status(500).json({ message: 'Server Error', error: error.message });
     }
 };
 
