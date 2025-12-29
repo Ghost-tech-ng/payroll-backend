@@ -14,7 +14,7 @@ const activitySchema = new mongoose.Schema({
     action: {
         type: String,
         required: true,
-        enum: ['CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'PAYROLL_RUN', 'OTHER']
+        enum: ['CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'PAYROLL_RUN', 'POSTING_DEDUCTION', 'POSTING_BONUS', 'POSTING_STATUTORY', 'OTHER']
     },
     description: {
         type: String,
@@ -29,6 +29,12 @@ const activitySchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         required: false
     },
+    // Posted Data Fields
+    amount: { type: Number, default: 0 },
+    type: { type: String }, // e.g. Deduction, Bonus, Statutory
+    item: { type: String }, // e.g. "Tax", "Xmas Bonus"
+    period: { type: String }, // e.g. "December 2024"
+    employeeName: { type: String }, // cached name
     createdAt: {
         type: Date,
         default: Date.now

@@ -31,6 +31,7 @@ const hrRoutes = require('./routes/hrRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
 const machineRoutes = require('./routes/machineRoutes');
+const employerStatutoryRoutes = require('./routes/employerStatutoryRoutes');
 
 const superAdminRoutes = require('./routes/superAdminRoutes');
 const { getPlans } = require('./controllers/superAdminController');
@@ -49,9 +50,12 @@ app.use('/api/recruitment', recruitmentRoutes);
 app.use('/api/hr', hrRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/attendance', attendanceRoutes);
+app.use('/api/biometric', require('./routes/biometric'));
+app.use('/api/activities', require('./routes/activityRoutes'));
 app.use('/api/outsourcing', require('./routes/outsourcingRoutes'));
 app.use('/api/organizations', require('./routes/organizationRoutes'));
 app.use('/api/machine', machineRoutes);
+app.use('/api/employer-statutory', employerStatutoryRoutes);
 app.use('/api/super-admin', superAdminRoutes);
 
 const PORT = process.env.PORT || 5000;

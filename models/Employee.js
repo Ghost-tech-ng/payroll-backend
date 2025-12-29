@@ -17,6 +17,9 @@ const employeeSchema = mongoose.Schema({
     email: {
         type: String,
         required: true,
+        unique: true,
+        lowercase: true,
+        trim: true
     },
     phoneNumber: {
         type: String,
@@ -52,6 +55,30 @@ const employeeSchema = mongoose.Schema({
         of: Number,
         default: {},
     },
+    // Employee-level statutory deductions (inherits from employer defaults, can be overridden)
+    statutoryDeductions: {
+        pension: {
+            enabled: { type: Boolean, default: true },
+            percentage: { type: Number, default: 8 }
+        },
+        nhf: {
+            enabled: { type: Boolean, default: true },
+            percentage: { type: Number, default: 2.5 }
+        },
+        nhis: {
+            enabled: { type: Boolean, default: true },
+            percentage: { type: Number, default: 5 }
+        },
+        voluntaryPension: {
+            enabled: { type: Boolean, default: false },
+            amount: { type: Number, default: 0 }
+        },
+        profUnionDues: {
+            enabled: { type: Boolean, default: false },
+            amount: { type: Number, default: 0 }
+        }
+    },
+    payeEnabled: { type: Boolean, default: false },
     bankDetails: {
         accountName: String,
         accountNumber: String,
@@ -61,6 +88,10 @@ const employeeSchema = mongoose.Schema({
         type: String,
         enum: ['active', 'inactive', 'terminated'],
         default: 'active',
+    },
+    isDeleted: {
+        type: Boolean,
+        default: false,
     },
     // Personal Info
     gender: String,
@@ -77,6 +108,7 @@ const employeeSchema = mongoose.Schema({
 
     // Pension
     pensionPin: String,
+    pensionPFA: String, // Pension Fund Administrator / Bank
     pensionCommencementDate: Date,
 
     // Other Details
@@ -112,6 +144,14 @@ const employeeSchema = mongoose.Schema({
         }
     ],
     photo: String, // URL for employee photo
+
+    // WebAuthn Credentials for Biometrics
+    credentials: [{
+        credentialID: String,
+        credentialPublicKey: String,
+        counter: Number,
+        transports: [String]
+    }],
 }, {
     timestamps: true,
 });
@@ -119,6 +159,6 @@ const employeeSchema = mongoose.Schema({
 // Add indexes for frequently queried fields
 employeeSchema.index({ organization: 1 });
 employeeSchema.index({ organization: 1, status: 1 });
-employeeSchema.index({ email: 1 });
+
 
 module.exports = mongoose.model('Employee', employeeSchema);

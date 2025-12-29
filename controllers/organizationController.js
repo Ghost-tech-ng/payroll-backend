@@ -37,16 +37,31 @@ const updateOrganization = async (req, res) => {
             if (req.body.payrollFrequency) organization.payrollFrequency = req.body.payrollFrequency;
             if (req.body.payDay) organization.payDay = req.body.payDay;
 
-            // Update statutory settings
-            if (req.body.employerPension) organization.employerPension = req.body.employerPension;
-            if (req.body.employerNHIS) organization.employerNHIS = req.body.employerNHIS;
-            if (req.body.employerECS) organization.employerECS = req.body.employerECS;
-            if (req.body.employerITF) organization.employerITF = req.body.employerITF;
+            // Update salary components
+            console.log('📥 Received salaryComponents:', req.body.salaryComponents);
+            if (req.body.salaryComponents !== undefined) organization.salaryComponents = req.body.salaryComponents;
+
+            // Update statutory settings - check for undefined to allow false/disabled values
+            console.log('📥 Received employerPension:', req.body.employerPension);
+            console.log('📥 Received employerNHIS:', req.body.employerNHIS);
+            console.log('📥 Received employerECS:', req.body.employerECS);
+            console.log('📥 Received employerITF:', req.body.employerITF);
+
+            if (req.body.employerPension !== undefined) organization.employerPension = req.body.employerPension;
+            if (req.body.employerNHIS !== undefined) organization.employerNHIS = req.body.employerNHIS;
+            if (req.body.employerECS !== undefined) organization.employerECS = req.body.employerECS;
+            if (req.body.employerITF !== undefined) organization.employerITF = req.body.employerITF;
+            if (req.body.lifeAssurance !== undefined) organization.lifeAssurance = req.body.lifeAssurance;
+            if (req.body.employeeStatutoryDeductions !== undefined) organization.employeeStatutoryDeductions = req.body.employeeStatutoryDeductions;
             if (req.body.payeEnabled !== undefined) organization.payeEnabled = req.body.payeEnabled;
             // Update storage tracking if needed (usually handled by system, not user update)
 
             const updatedOrganization = await organization.save();
-            console.log('Organization updated successfully:', updatedOrganization.name);
+            console.log('✅ Organization updated successfully:', updatedOrganization.name);
+            console.log('💾 Saved employerPension:', updatedOrganization.employerPension);
+            console.log('💾 Saved employerNHIS:', updatedOrganization.employerNHIS);
+            console.log('💾 Saved employerECS:', updatedOrganization.employerECS);
+            console.log('💾 Saved employerITF:', updatedOrganization.employerITF);
             res.json(updatedOrganization);
         } else {
             console.warn('Organization not found for ID:', req.user.organization);

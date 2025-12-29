@@ -38,6 +38,11 @@ const payrollSchema = mongoose.Schema({
         nhf: Number,
         cra: Number,
         taxableIncome: Number,
+        // Employer Contributions (Saved at time of payroll)
+        employerPension: { type: Number, default: 0 },
+        employerNHIS: { type: Number, default: 0 },
+        employerECS: { type: Number, default: 0 },
+        employerITF: { type: Number, default: 0 },
 
         breakdown: {
             allowances: Map,

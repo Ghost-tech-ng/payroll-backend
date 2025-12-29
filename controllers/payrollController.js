@@ -45,6 +45,10 @@ const createPayroll = async (req, res) => {
             return res.status(400).json({ message: 'No active employees found' });
         }
 
+        // Get organization settings for rates
+        const Organization = require('../models/Organization');
+        const orgSettings = await Organization.findById(req.user.organization);
+
         let totalAmount = 0;
         const details = employees.map((emp) => {
             const basic = emp.basicSalary || 0;
@@ -74,13 +78,12 @@ const createPayroll = async (req, res) => {
                 });
             }
 
+            const grossIncome = basic + totalAllowances; // Simplified gross
+
             // Calculate PAYE tax and statutory deductions
             const taxDetails = calculatePAYE(basic, housingAllowance, transportAllowance, otherAllowances);
 
-            // Calculate other manual deductions (if any, excluding statutory ones calculated by standard)
-            // Note: If user manually added 'Pension' or 'Tax' in deductions map, we should probably override or ignore them to avoid double counting,
-            // OR we assume manual deductions are extra (like loan repayment, penalties etc).
-            // For now, let's treat manual deductions as EXTRA deductions (e.g. Loans).
+            // Calculate other manual deductions
             let manualDeductions = 0;
             if (emp.deductions) {
                 const deductionEntries = emp.deductions instanceof Map ? Array.from(emp.deductions.entries()) : Object.entries(emp.deductions);
@@ -96,6 +99,36 @@ const createPayroll = async (req, res) => {
 
             const netSalary = taxDetails.grossIncome - totalDeductions;
             totalAmount += netSalary;
+
+            // --- Calculate Employer Contributions ---
+            // 1. Employer Pension (Standard: 10% of Basic+Housing+Transport)
+            let employerPension = 0;
+            if (orgSettings && orgSettings.employerPension && orgSettings.employerPension.enabled) {
+                const rate = (orgSettings.employerPension.value || 10) / 100;
+                employerPension = (basic + housingAllowance + transportAllowance) * rate;
+            }
+
+            // 2. Employer NHIS (Standard: usually set % of Basic or Gross)
+            let employerNHIS = 0;
+            if (orgSettings && orgSettings.employerNHIS && orgSettings.employerNHIS.enabled) {
+                const rate = (orgSettings.employerNHIS.value || 5) / 100;
+                employerNHIS = (basic + housingAllowance + transportAllowance) * rate; // Using same base as common practice
+            }
+
+            // 3. Employer ECS (Standard: 1% of Total Payroll)
+            let employerECS = 0;
+            if (orgSettings && orgSettings.employerECS && orgSettings.employerECS.enabled) {
+                const rate = (orgSettings.employerECS.value || 1) / 100;
+                employerECS = grossIncome * rate;
+            }
+
+            // 4. Employer ITF (Standard: 1% of Annual Payroll -> Monthly)
+            let employerITF = 0;
+            if (orgSettings && orgSettings.employerITF && orgSettings.employerITF.enabled) {
+                const rate = (orgSettings.employerITF.value || 1) / 100;
+                employerITF = grossIncome * rate;
+            }
+            // ----------------------------------------
 
             // Add statutory deductions to the breakdown map for completeness
             const fullDeductionsMap = emp.deductions ? JSON.parse(JSON.stringify(emp.deductions)) : {};
@@ -116,6 +149,12 @@ const createPayroll = async (req, res) => {
                 cra: taxDetails.cra,
                 taxableIncome: taxDetails.taxableIncome,
 
+                // Store Employer Contributions
+                employerPension,
+                employerNHIS,
+                employerECS,
+                employerITF,
+
                 breakdown: {
                     allowances: emp.allowances,
                     deductions: fullDeductionsMap,
@@ -127,24 +166,12 @@ const createPayroll = async (req, res) => {
             organization: req.user.organization,
             month,
             year,
-            status: 'completed',
+            status: 'completed', // Or 'pending' if you want a review step
             totalAmount,
             details,
         });
 
         const createdPayroll = await payroll.save();
-
-        // Log Activity
-        const Activity = require('../models/Activity');
-        await Activity.create({
-            organization: req.user.organization,
-            user: req.user._id,
-            action: 'PAYROLL_RUN',
-            description: `Ran payroll for ${month} ${year}`,
-            entityType: 'Payroll',
-            entityId: createdPayroll._id
-        });
-
         res.status(201).json(createdPayroll);
 
     } catch (error) {
